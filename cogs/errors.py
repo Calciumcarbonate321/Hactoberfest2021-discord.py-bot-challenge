@@ -3,9 +3,7 @@ import sys
 import traceback
 from discord.ext import commands
 import datetime
-from discord.ext.commands.cooldowns import C
-
-from discord.ext.commands.core import Command
+from difflib import get_close_matches
 
 class CommandErrorHandler(commands.Cog):
 
@@ -21,11 +19,17 @@ class CommandErrorHandler(commands.Cog):
         cog = ctx.cog
         if cog and cog._get_overridden_method(cog.cog_command_error) is not None:
             return
-
-        ignored = (commands.CommandNotFound,commands.NotOwner)
-        error = getattr(error, 'original', error)
+        ignored = (commands.NotOwner)
 
         if isinstance(error, ignored):
+            return
+
+        if isinstance(error, commands.CommandNotFound):
+            cmd = ctx.invoked_with
+            cmds = [cmd.name for cmd in self.client.commands if not cmd.hidden] 
+            matches = get_close_matches(cmd, cmds)
+            if len(matches) > 0:
+                await ctx.send(f'Command "{cmd}" not found, maybe you meant "{matches[0]}"?')
             return
 
         if isinstance(error, commands.DisabledCommand):
@@ -36,9 +40,15 @@ class CommandErrorHandler(commands.Cog):
                 await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
             except discord.HTTPException:
                 pass
+        
+        elif isinstance(error,commands.MemberNotFound):
+            await ctx.send("Sorry, that member was not found. Make sure you have provided a valid user id/user name.")
+
+        elif isinstance(error,commands.BadArgument):
+            await ctx.send(f"{error.message}")
 
         elif isinstance(error, commands.MissingPermissions):
-            await ctx.send(f"You don't even have the required perms to run this command.Permissions missing : {error.missing_perms}")
+            await ctx.send(error)
 
         elif isinstance(error,commands.CommandOnCooldown):
             message=f"This command is on cooldown. Please try again after {datetime.timedelta(seconds=round(error.retry_after))} seconds."

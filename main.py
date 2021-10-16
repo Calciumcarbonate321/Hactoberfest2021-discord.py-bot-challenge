@@ -13,6 +13,7 @@ from cogs.help import BotHelp
 import asyncio
 import aiohttp
 from urllib.parse import urlencode
+from utils.views import Delete
 
 def get_prefix(client, message):
   if message.author.id==437163344525393920:
@@ -71,23 +72,12 @@ async def load_cogs():
             "cogs.errors",
             "cogs.api",
             "cogs.images",
+            "cogs.mod",
             "jishaku"
     ]
   for i in cogs:
     client.load_extension(i)
     print("loaded ",i)
-
-
-@client.command()
-@commands.has_permissions(administrator=True)
-async def setprefix(ctx, prefix):
-  with open('.assets/prefixes.json','r')as f:
-    prefixes = json.load(f)
-  prefixes[str(ctx.guild.id)] = str(prefix)
-  with open('.assets/prefixes.json','w') as f:
-    json.dump(prefixes,f)
-  embed = discord.Embed(title='Prefix for this server changed',description='Prefix for this server has been changed to '+str(prefix)+'.',color=discord.Colour.purple())
-  await ctx.send(embed=embed)
 
 
 @client.event
@@ -144,49 +134,29 @@ async def on_ready():
   await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='e!help'))
   print("We have logged in as {0.user}".format(client))
 
-
-  
+'''
 @client.command()
-async def worry(ctx,member:discord.Member=None):
+async def fight(ctx,member:discord.Member=None):
   if member is None:
     user = ctx.message.author
   else:
     user = member
-  wanted_img = Image.open('.assets/worry.jpg')
+  wanted_img = Image.open('./assets/anime fight.jpg')
   asset = user.avatar.url_as(size=128)
+  author_asset = ctx.message.author.avatar.url_as(size=128)
   data = BytesIO(await asset.read())
   pfp = Image.open(data)
-  pfp = pfp.resize((63,63))
-  wanted_img.paste(pfp,(68,14))
+  author_data = BytesIO(await author_asset.read())
+  author_pfp = Image.open(author_data)
+
+  pfp = pfp.resize((84,84))
+  author_pfp = author_pfp.resize((84,84))
+  wanted_img.paste(pfp(38,13))
+  wanted_img.save('.assets/profile.jpg')
+  wanted_img.paste(author_pfp,(212,16))
   wanted_img.save('.assets/profile.jpg')
   await ctx.send(file=discord.File('.assets/profile.jpg'))
-
-#@client.command()
-#async def fight(ctx,member:discord.Member=None):
-  #if member is None:
-    #user = ctx.message.author
-  #else:
-    #user = member
-  #wanted_img = Image.open('.assets/anime fight.jpg')
-  #asset = user.avatar.url_as(size=128)
-  #author_asset = ctx.message.author.avatar.url_as(size=128)
-  #data = BytesIO(await asset.read())
-  #pfp = Image.open(data)
-  #author_data = BytesIO(await author_asset.read())
-  #author_pfp = Image.open(author_data)
-
-  #pfp = pfp.resize((84,84))
-  #author_pfp = author_pfp.resize((84,84))
-  #wanted_img.paste(pfp(38,13))
-  #wanted_img.save('.assets/profile.jpg')
-  #wanted_img.paste(author_pfp,(212,16))
-  #wanted_img.save('.assets/profile.jpg')
-  #await ctx.send(file=discord.File('.assets/profile.jpg'))
-
-@client.command()
-async def hello(ctx):
-  await ctx.send('Hi!')
-
+'''
 
 @client.command(aliases=['regulations'])
 async def rule(ctx,*,number=1):
@@ -195,21 +165,6 @@ async def rule(ctx,*,number=1):
   await ctx.send(embed=embed)
 
 
-
-@client.command(aliases=['k'])
-@commands.has_permissions(administrator = True)
-async def kick(ctx,member : discord.Member,*,reason='No reason provided'):
-  embed = discord.Embed(title='Kick', description=str(member)+' has been kicked from the Chill zone for '+reason,color=discord.Colour.teal())
-  embed2 = discord.Embed(title='Kick', description='You have been kicked from the Chill zone for '+reason,color=discord.Colour.teal())
-  await member.send(embed=embed2)
-  await member.kick(reason=reason)
-  await ctx.send(embed=embed)
-
-@client.command(aliases=['b'])
-@commands.has_permissions(administrator = True)
-async def ban(ctx,member : discord.Member,*,reason='No reason provided'):
-  await member.send('You have been banned from The Chill Zone for '+reason)
-  await member.ban(reason=reason)
 
 @client.command(aliases=['w'])
 async def warn(ctx,member : discord.Member,*,reason='No reason provided'):
@@ -293,37 +248,13 @@ async def curse(ctx,user : discord.Member = None):
         await ctx.send('Please mention a use like `.cures @member`')
     else:
         await ctx.send(f'`{user.name}` is cursed and {random.choice(curse)}')
-
-@client.command(aliases=['c'])
-@commands.has_permissions(manage_messages = True)
-async def clear(ctx,amount=2):
-  await ctx.channel.purge(limit = amount)
-
-@client.command()
-@commands.has_permissions(ban_members=True)
-async def unban(ctx,member):
-  banned_users = await ctx.guild.bans()
-  member_name, member_disc = member.split('#')
-  for banned_entry in banned_users:
-    user = banned_entry.user
-    if (user.name, user.discriminator)==(member_name,member_disc):
-      embed = discord.Embed(title='Unban',description=str(member)+' has been unbanned!',color=discord.Colour.blurple())
-      await ctx.guild.unban(user)
-    await ctx.send(embed=embed)
       
-
 @client.command()
 async def ping(ctx):
-  ping = 'Pong! {0}'.format(round(client.latency, 1))
-  embed =  discord.Embed(title='Ping', description=str(ping),color = discord.Colour.magenta())
-  await ctx.send(embed=embed)
+  ping = 'Pong! {0}'.format(round(client.latency)*1000)
+  embed =  discord.Embed(title='Ping', description=ping,color = discord.Colour.green())
+  await ctx.send(embed=embed,view=Delete(ctx.author))
 
-@client.command(aliases=['dp'])
-async def profpic(ctx,member:discord.Member):
-  member_name, member_disc = str(member).split('#')
-  embed = discord.Embed(title='Profile Picture of '+member_name ,color = discord.Colour.orange())
-  embed.set_image(url=member.avatar.url)
-  await ctx.send(embed=embed)
 
 @client.command()
 async def poll(ctx,option1,option2,*,question):
@@ -362,13 +293,6 @@ async def highlow(ctx,member:discord.Member,number):
     embed = discord.Embed(title="Error",description='Uh oh! Something went wrong!',color=discord.Colour.lighter_grey())
   await ctx.send(embed=embed)
   
-@client.command(aliases=['htp'])
-async def howtoplay(ctx):
-  embed=discord.Embed(title='How to play',color=discord.Colour.gold())
-  embed.add_field(name='e!highlow {member to compete wtih} {number}',value='The bot will choose a random number between 1 - 100. Both players will choose their numbers, and whoever\'s number is the closest to the bot\'s wins the game!',inline=False)
-  embed.set_footer(text='For now, this is the only game. Future games will the added later!')
-  await ctx.send(embed=embed)
-
 
 
 @client.command()
@@ -391,10 +315,6 @@ async def ability(ctx,*,ability):
     
     await ctx.send(embed=embed)
       
-
-
-
-
 
 @client.command()
 async def typechart(ctx):
@@ -421,7 +341,6 @@ async def warns(ctx,member:discord.Member):
     no_of_warns = warning_dict[str(ctx.guild.id)][str(member)]
     embed = discord.Embed(title=str(member)+'\'s warns',description=str(member)+' has '+str(no_of_warns)+' warnings.',color=discord.Colour.gold())
   await ctx.send(embed=embed)
-
 
 
 
