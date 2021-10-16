@@ -114,7 +114,7 @@ class BotHelp(commands.MinimalHelpCommand):
             for command in filtered_commands:
                 embed.add_field(name=self.get_command_signature(command), value=command.help or "No help found")
            
-        await self.context.send(embed=embed)
+        await self.context.send(embed=embed,view=Delete(self.context.author))
 
     async def send_group_help(self, group):
         title = self.get_command_signature(group)
@@ -128,6 +128,7 @@ class BotHelp(commands.MinimalHelpCommand):
         embed = discord.Embed(title="A new error has appeared!", description=error)
         channel = self.get_destination()
         await channel.send(embed=embed,view=Delete(self.context.author))
+
     async def command_not_found(self, string):
         commands_list = [str(cmd) for cmd in self.context.bot.commands]
         if dym := '\n'.join(get_close_matches(string, commands_list)):

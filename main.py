@@ -12,6 +12,7 @@ from datetime import datetime
 from cogs.help import BotHelp
 import asyncio
 import aiohttp
+import aiosqlite
 from urllib.parse import urlencode
 from utils.views import Delete
 
@@ -60,6 +61,11 @@ class bot(commands.Bot):
 
 client = bot(command_prefix = get_prefix, case_insensitive=True,intents=discord.Intents.all())
 
+async def startup():
+  await client.wait_until_ready()
+  client.db=await aiosqlite.connect("./data/bank.db")
+  await client.db.execute("CREATE TABLE IF NOT EXISTS bankdata (userid int,wallet int,bankbal int,daily int)")
+
 blacklisted_words = [' fuck ', ' bitch ', ' prick ', ' cum ',  'pussy ', ' dick ', ' penis ', ' cunt ',' ass ',' asshole ',' nigga ',' chutia ',' chutiya ',' sex ',' porn ',' boob ',' vagina ']
 
 client.help_command=BotHelp()
@@ -73,6 +79,7 @@ async def load_cogs():
             "cogs.api",
             "cogs.images",
             "cogs.mod",
+            "cogs.economy",
             "jishaku"
     ]
   for i in cogs:
@@ -344,71 +351,7 @@ async def warns(ctx,member:discord.Member):
 
 
 
-#currency part of bot
-@client.command()
-async def start(ctx):
-  user = str(ctx.message.author)
-
-  with open('.assets/currency.json','r') as f:
-    user_data = json.load(f)
-  if user in user_data:
-    embed=discord.Embed(title='Error',description='You have already registered to the game!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    user_data[user] = {}
-    user_data[user]['wallet_balance'] = 0
-    user_data[user]['inventory'] = {}
-    user_data[user]['bank_balance'] = 0
-    user_data[user]['bank_limit'] = 100000
-    user_data[user]['job'] = 'none'
-    user_data[user]['multiplier'] = 0
-    with open('.assets/currency.json','w') as f:
-      json.dump(user_data, f)
-    embed = discord.Embed(title='User registered',description='Congratulations! You have successfully registered on the errixx currency game!',color=discord.Colour.magenta())
-    await ctx.send(embed=embed)
-
-@client.command()
-async def bal(ctx):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  if str(ctx.message.author) not in data:
-    embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    wallet_bal = str(int(data[str(ctx.message.author)]['wallet_balance']))
-    bank_bal = str(int(data[str(ctx.message.author)]['bank_balance']))
-    
-    user = str(ctx.message.author)
-    user_name, user_disc = user.split('#')
-    embed = discord.Embed(title='Balance',color=discord.Colour.teal())
-    str_bal = 'Wallet Balance: $'+wallet_bal+'\n'+'Bank Balance: $'+bank_bal
-    embed.add_field(name=user_name+'\'s balance',value=str_bal)
-    await ctx.send(embed=embed)
-
-@client.command()
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def beg(ctx):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  if 'multiplier' not in data[str(ctx.message.author)]:
-    data[str(ctx.message.author)]['multiplier'] = 0
-  
-  amt = random.randrange(1, 1001)
-  if data[str(ctx.message.author)]['multiplier'] == 0:
-    amt = int(amt)
-  else:
-    amt = int(amt+(data[str(ctx.message.author)]['multiplier']/100)*amt)
-  
-  
-  if str(ctx.message.author) not in data:
-    embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    data[str(ctx.message.author)]['wallet_balance'] += int(amt)
-    string = 'You received **'+str(amt)+'** coins!'
-    await ctx.send(string)
-    with open('.assets/currency.json','w') as f:
-      json.dump(data, f)
+'''
 
 @client.command()
 async def jobs(ctx, page=1):
@@ -513,67 +456,9 @@ async def work(ctx):
       await ctx.send('You worked hard and received **'+str(payment)+'** coins!')
       data[str(ctx.message.author)]['wallet_balance'] += payment
       with open('.assets/currency.json','w') as f:
-        json.dump(data, f)
+        json.dump(data, f)'''
 
-@client.command(aliases=['dep'])
-async def deposit(ctx, amount):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  if str(ctx.message.author) not in data:
-    embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    if str(amount) == 'all':
-      dep_amt = str(data[str(ctx.message.author)]['wallet_balance'])
-      data[str(ctx.message.author)]['bank_balance'] += data[str(ctx.message.author)]['wallet_balance']
-      data[str(ctx.message.author)]['wallet_balance'] = 0
-      embed = discord.Embed(title='Deposit Successful',description='You successfully deposited $'+str(dep_amt)+'!',color=discord.Colour.red())
-      await ctx.send(embed=embed)
-      with open('.assets/currency.json','w') as f:
-        json.dump(data, f)
-    else:
-      amt = int(amount)
-      if amt > data[str(ctx.message.author)]['wallet_balance']:
-        embed = discord.Embed(title='Error',description='You dont have that much in your wallet!',color=discord.Colour.lighter_grey())
-        await ctx.send(embed=embed)
-      elif data[str(ctx.message.author)]['bank_balance'] + amt > data[str(ctx.message.author)]['bank_limit']:
-        embed = discord.Embed(title='Error',description='Your bank can\'t handle that much money!',color=discord.Colour.lighter_grey())
-        await ctx.send(embed=embed)
-      else:
-        data[str(ctx.message.author)]['wallet_balance'] -= amt
-        data[str(ctx.message.author)]['bank_balance'] += amt
-        embed = discord.Embed(title='Deposit Successful',description='You successfully deposited $'+str(amt)+'!',color=discord.Colour.red())
-        await ctx.send(embed=embed)
-        with open('.assets/currency.json','w') as f:
-          json.dump(data, f)
-  
-@client.command(aliases=['with'])
-async def withdraw(ctx, amount):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  if str(ctx.message.author) not in data:
-    embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    if str(amount) == 'all':
-      with_amt = str(data[str(ctx.message.author)]['bank_balance'])
-      data[str(ctx.message.author)]['wallet_balance'] += data[str(ctx.message.author)]['bank_balance']
-      data[str(ctx.message.author)]['bank_balance'] = 0
-      embed = discord.Embed(title='Withdrawal Successful',description='You successfully withdrew $'+str(with_amt)+'!',color=discord.Colour.red())
-      
-    else:
-      amt = int(amount)
-      if amt > data[str(ctx.message.author)]['bank_balance']:
-        embed = discord.Embed(title='Error',description='You dont have that much in your bank!',color=discord.Colour.lighter_grey())
-        await ctx.send(embed=embed)
-    
-      else:
-        data[str(ctx.message.author)]['wallet_balance'] += amt
-        data[str(ctx.message.author)]['bank_balance'] -= amt
-        embed = discord.Embed(title='Withdrawal Successful',description='You successfully withdrew $'+str(amt)+'!',color=discord.Colour.red())
-    await ctx.send(embed=embed)
-    with open('.assets/currency.json','w') as f:
-      json.dump(data, f)
+'''
 
 @client.command()
 async def shop(ctx,page=1):
@@ -744,62 +629,6 @@ async def invest(ctx):
       await ctx.send(embed=embed)
 
 @client.command()
-async def give(ctx,member:discord.Member,amount=None):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  
-  if str(ctx.message.author) not in data:
-    embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    if amount is None:
-      embed=discord.Embed(title='No amount given.',description='You actually need to give an amount, dumdum.',color=discord.Colour.lighter_grey())
-      await ctx.send(embed=embed)
-    elif int(amount) > data[str(ctx.message.author)]['wallet_balance']:
-      embed=discord.Embed(title='You don\'t have that much!',description='You dont have that much money, poor guy.',color=discord.Colour.lighter_grey())
-      await ctx.send(embed=embed)
-    else:
-      data[str(member)]['wallet_balance'] += int(amount)
-      data[str(ctx.message.author)]['wallet_balance'] -= int(amount)
-      embed=discord.Embed(title='Gift successfull!',description='You gave '+str(member)+' $'+str(amount)+'!',color=discord.Colour.magenta())
-      await ctx.send(embed=embed)
-    with open('.assets/currency.json','w') as f:
-      json.dump(data, f)
-
-@client.command()
-async def rob(ctx,member:discord.Member=None):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  
-  if str(ctx.message.author) not in data:
-    embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-    await ctx.send(embed=embed)
-  else:
-    if member is None:
-      embed=discord.Embed(title='No member given.',description='You actually need to mention someone to rob from, dumdum.',color=discord.Colour.lighter_grey())
-      await ctx.send(embed=embed)
-    elif data[str(member)]['wallet_balance'] < 1000:
-      embed=discord.Embed(title='Poor member alert!',description='Ya sure ya wanna rob a poor guy?',color=discord.Colour.lighter_grey())
-      await ctx.send(embed=embed)
-    else:
-      if 'Kalashnikov' in data[str(ctx.message.author)]['inventory']:
-        amount = random.randrange(1, int(data[str(member)]['wallet_balance']))
-
-        amount = amount + amount//2
-        
-      else:
-        amount = random.randrange(1, int(data[str(member())]['wallet_balance']
-
-
-      -(data[str(member)]['wallet_balance']//4)))
-      data[str(member)]['wallet_balance'] -= amount
-      data[str(ctx.message.author)]['wallet_balance'] += amount
-      embed=discord.Embed(title='Robbery successful',description='You stole $'+str(amount)+', lmao!',color=discord.Colour.teal())
-      await ctx.send(embed=embed)
-      with open('.assets/currency.json','w') as f:
-        json.dump(data, f)
-
-@client.command()
 async def sell(ctx, objecto=None, amount=1):
   with open('.assets/currency.json','r') as f:
     data = json.load(f)
@@ -932,37 +761,8 @@ async def chore(ctx):
     await ctx.send(f)
     print(f)
     traceback.print_exc()
-
-@client.command()
-@commands.cooldown(1, 86400, commands.BucketType.user)
-async def daily(ctx):
-  with open('.assets/currency.json','r') as f:
-    data = json.load(f)
-  with open('.assets/streak.json','r') as f:
-    strlist = json.load(f)
-
-  
-    if str(ctx.message.author) not in data:
-      embed=discord.Embed(title='Error',description='You need to register for the game to play it! Do ```e!start``` to register!',color=discord.Colour.lighter_grey())
-      await ctx.send(embed=embed)
-    else:
-      if str(ctx.message.author) not in strlist:
-        strlist[str(ctx.message.author)] = 1000
-        streak = strlist[str(ctx.message.author)]
-      else:
-        streak = strlist[str(ctx.message.author)]
-      daily = 10000 + streak
-      streak += 1000
-      data[str(ctx.message.author)]['wallet_balance'] += daily
-      strlist[str(ctx.message.author)] = streak
-      embed = discord.Embed(title='Daily Coins',description='You have received your daily coins of $'+str(daily)+'!',color=discord.Colour.purple())
-      await ctx.send(embed=embed)
-    
-    with open('.assets/currency.json','w') as f:
-      json.dump(data, f)
-    with open('.assets/streak.json','w') as f:
-      json.dump(strlist, f)  
-
+'''
 
 client.loop.create_task(load_cogs())
+client.loop.create_task(startup())
 client.run('TOKEN')
