@@ -2,6 +2,7 @@ import discord
 from discord import ui
 from discord.ext import menus,commands
 from itertools import starmap,chain
+from difflib import get_close_matches
 from utils.views import Delete
 from utils.buttons import LinkButton
 
@@ -105,7 +106,16 @@ class BotHelp(commands.MinimalHelpCommand):
         channel = self.get_destination()
         view=Delete(user=self.context.author)
         await channel.send(embed=embed,view=view)
-    
+
+    async def send_help_embed(self, title, description, commands): 
+        embed = HelpEmbed(title=title, description=description or "No help found")
+
+        if filtered_commands := await self.filter_commands(commands):
+            for command in filtered_commands:
+                embed.add_field(name=self.get_command_signature(command), value=command.help or "No help found")
+           
+        await self.context.send(embed=embed,view=Delete(self.context.author))
+
     async def send_group_help(self, group):
         title = self.get_command_signature(group)
         await self.send_help_embed(title, group.help, group.commands)
@@ -118,3 +128,8 @@ class BotHelp(commands.MinimalHelpCommand):
         embed = discord.Embed(title="A new error has appeared!", description=error)
         channel = self.get_destination()
         await channel.send(embed=embed,view=Delete(self.context.author))
+
+    async def command_not_found(self, string):
+        commands_list = [str(cmd) for cmd in self.context.bot.commands]
+        if dym := '\n'.join(get_close_matches(string, commands_list)):
+            return f"Sorry that command wasn't found, did you mean...\n{dym}"
