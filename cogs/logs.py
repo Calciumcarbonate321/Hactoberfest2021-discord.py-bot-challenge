@@ -58,23 +58,23 @@ class logs(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self,before,after):
-                  if before.display_name != after.display_name:
-                    detect = open("./logchan.json")
-                    object = json.load(detect)
-                    guild = after.guild
-                    chan= object[str(guild.id)]           
-                    chan = discord.utils.get(guild.channels,id=chan)
-                    log_channel = chan
-                    embed = discord.Embed(tittle='Member Update',
-                        description='Nickname changed',
-                        color=after.colour,
-                        timestamp=datetime.utcnow())
+        if before.display_name != after.display_name:
+            detect = open("./logchan.json")
+            object = json.load(detect)
+            guild = after.guild
+            chan= object[str(guild.id)]           
+            chan = discord.utils.get(guild.channels,id=chan)
+            log_channel = chan
+            embed = discord.Embed(tittle='Member Update',
+                description='Nickname changed',
+                color=after.colour,
+                timestamp=datetime.utcnow())
 
-                    fields = [("Before",before.display_name,False),
+            fields = [("Before",before.display_name,False),
                                 ("After",after.display_name,False)]
-                    for name, value, inline in fields:                 
-                        embed.add_field(name=name,value=value,inline=inline)
-                    await log_channel.send(embed=embed)
+            for name, value, inline in fields:                 
+                embed.add_field(name=name,value=value,inline=inline)
+            await log_channel.send(embed=embed)
 
     
 
