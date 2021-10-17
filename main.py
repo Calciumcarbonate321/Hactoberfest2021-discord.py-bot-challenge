@@ -78,8 +78,13 @@ async def load_cogs():
             "cogs.errors",
             "cogs.api",
             "cogs.images",
+
             "cogs.mod",
             "cogs.economy",
+
+            "cogs.roles",
+            "cogs.events"
+
             "jishaku"
     ]
   for i in cogs:
