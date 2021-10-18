@@ -27,7 +27,7 @@ def get_prefix(client, message):
   except KeyError: 
       with open('assets/prefixes.json', 'r',encoding='utf8') as k:
           prefixes = json.load(k)
-      prefixes[str(message.guild.id)] = 'e!'
+      prefixes[str(message.guild.id)] = '.'
 
       with open('assets/prefixes.json', 'w',encoding='utf8') as j:
           j.write(json.dumps(prefixes,indent=4))
@@ -37,7 +37,7 @@ def get_prefix(client, message):
           return prefixes[str(message.guild.id)]
       
   except: 
-      return 'e!'
+      return '.'
 
 class bot(commands.Bot):
   def __init__(self, *args, **kwargs):
