@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.utils import get
 import json
 
 class Moderation(commands.Cog):
@@ -78,6 +79,40 @@ class Moderation(commands.Cog):
             json.dump(prefixes,f)
         embed = discord.Embed(title='Prefix for this server changed',description='Prefix for this server has been changed to '+str(prefix)+'.',color=discord.Colour.purple())
         await ctx.send(embed=embed)
+
+    @commands.group()
+    async def slowmode(self,ctx, seconds: int=5):   
+        await ctx.channel.edit(slowmode_delay=seconds)
+        await ctx.send(f"Set the slowmode delay in this channel to {seconds} seconds!")
+
+    @slowmode.command()
+    async def remove(self,ctx):
+        await ctx.channel.edit(slowmode_delay=0)
+        await ctx.send('removed slowmode for the channel')
+
+    @commands.command(name="pin",help="Pins the message with the specified ID to the current channel")
+    @commands.has_permissions(manage_messages=True)
+    async def pin(self, ctx, id:int):      
+        message = await ctx.channel.fetch_message(id)
+        await message.pin()
+        await ctx.send("Successfully pinned that msg")
+
+    @commands.command(name="unpin",help="Unpins the message with the specified ID from the current channel")
+    @commands.has_permissions(manage_messages=True)
+    async def unpin(self, ctx, id:int):
+        pinned_messages = await ctx.channel.pins()
+        message = discord.utils.get(pinned_messages, id=id)
+        await message.unpin()
+        await ctx.send("Successfully unpinned that msg")
+        
+        
+    @commands.command(name="removereactions",help="Clear reactions from a message in the current channel")
+    @commands.has_permissions(manage_messages=True)
+    async def removereactions(self, ctx, id:int):
+        message = await ctx.channel.fetch_message(id)
+        await message.clear_reactions()
+        await ctx.send("Removed")
+
 
 def setup(client):
     client.add_cog(Moderation(client))
