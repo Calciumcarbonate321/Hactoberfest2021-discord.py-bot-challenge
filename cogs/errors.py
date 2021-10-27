@@ -13,7 +13,7 @@ class CommandErrorHandler(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx, error):  # sourcery no-metrics
 
         if hasattr(ctx.command, 'on_error'):
             return
@@ -55,9 +55,11 @@ class CommandErrorHandler(commands.Cog):
         elif isinstance(error,commands.ChannelNotReadable):
             await ctx.send("Sorry I do not have the permission to read the messages in that channel.")
         
+        elif isinstance(error,commands.MissingRequiredArgument):
+            await ctx.send(f"Sorry, {error}")
 
         elif isinstance(error,commands.BadArgument):
-            await ctx.send(f"{error.message}")
+            await ctx.send(f"{error.args}")
 
         elif isinstance(error, commands.MissingPermissions):
             await ctx.send(f"Sorry you are missing some permission(s) that are required to run this command : {error.missing_permissions}")

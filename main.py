@@ -19,7 +19,7 @@ from utils.views import Delete
 
 def get_prefix(client, message):
   if message.author.id==437163344525393920:
-    return ""
+    return ["","e!"]
   try:
       with open('assets/prefixes.json', 'r',encoding='utf8') as r:
           prefixes = json.load(r)
@@ -82,7 +82,6 @@ async def load_cogs():
             "cogs.music",
             "cogs.mod",
             "cogs.economy",
-
             "cogs.roles",
             "cogs.events",
 
@@ -144,7 +143,7 @@ ruleslist = [
 
 @client.event
 async def on_ready():
-  await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='e!help'))
+  await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name='.help'))
   print("We have logged in as {0.user}".format(client))
 
 '''

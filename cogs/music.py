@@ -1,5 +1,7 @@
 import wavelink
+import discord
 from discord.ext import commands
+
 
 class Music(commands.Cog):
     """Music cog to hold Wavelink related commands and listeners."""
@@ -26,6 +28,8 @@ class Music(commands.Cog):
     async def on_wavelink_node_ready(self, node: wavelink.Node):
         print(f'Node: <{node.identifier}> is ready!')
 
+    
+
     @commands.command(name="play",aliases=["p"],help="Play a song with the given search query.If not connected, connect to our voice channel.")
     async def play(self, ctx, *,search: wavelink.YouTubeTrack):
         if not ctx.voice_client:
@@ -33,12 +37,13 @@ class Music(commands.Cog):
                 cls=wavelink.Player)
         else:
             vc: wavelink.Player = ctx.voice_client
+        search.requester=ctx.author
         if not vc.is_playing():
-            await ctx.send("empty q")
             await vc.play(search)
+            await ctx.send(f"Started playing {search}")
             return
         vc.queue.put(search)
-        await ctx.send(f"Started playing {search}")
+        await ctx.send(f"Added {search} to the queue.")
     
     @commands.group(name="queue",aliases=["q"],help="Displays the current queue.")
     async def q(self,ctx):
@@ -48,9 +53,29 @@ class Music(commands.Cog):
     @q.command(name="clear",help="Clears the queue.")
     async def cq(self,ctx):
         p=self.bot.wlink.get_player(ctx.guild)
-        await p.clear()
+        p.queue.clear()
         await ctx.message.add_reaction("👌")
         await ctx.send("Cleared the queue.")
+
+    @commands.command(name="seek",help="Seeks the audio track that is being played.")
+    async def seek(self,ctx,position_in_seconds:int):
+        p=self.bot.wlink.get_player(ctx.guild)
+        await p.seek(position_in_seconds)
+
+    @commands.command(name="volume",help="Increases/decreases the volume, give any value between 0 and 1000.")
+    async def volume(self,ctx,volume:int):
+        p=self.bot.wlink.get_player(ctx.guild)
+        await p.set_volume(volume)
+
+    @commands.command(name="now_playing",aliases=["np"],help="Shows the current playing audio.")
+    async def np(self,ctx):
+        p=self.bot.wlink.get_player(ctx.guild)
+        embed=discord.Embed(title="Now playing",color=discord.Colour.random())
+        embed.add_field(name="Track name",value=p.track)
+        embed.add_field(name="Track link",value=f"[Click here]({p.track.uri})")
+        embed.set_thumbnail(url=p.track.thumb)
+        embed.set_footer(text=f"Requested bt {p.track.requester}")
+        await ctx.send(embed=embed)
 
     @commands.command(name="skip",aliases=["next"],help="Skips the current audio.")
     async def _skip(self,ctx):
@@ -59,10 +84,11 @@ class Music(commands.Cog):
         await p.play(nt)
         await ctx.send(f"now playing {nt}")
 
-    @commands.command(name="stop",help="Stops the player.")
+    @commands.command(name="stop",help="Stops the player and clears the queue.")
     async def stop(self,ctx):
         player=self.bot.wlink.get_player(ctx.guild)
         await player.stop() 
+        player.queue.clear()
         await ctx.message.add_reaction("👌")
         await ctx.send("Successfully stopped.")
 
@@ -76,7 +102,7 @@ class Music(commands.Cog):
         await ctx.send("Successfully paused.")   
 
     @commands.command(name="resume",help="Resumes a paused player.")
-    async def pause(self,ctx):
+    async def resume(self,ctx):
         player=self.bot.wlink.get_player(ctx.guild)
         if not player.is_paused():
             return await ctx.send("The player is not paused.")
