@@ -16,6 +16,7 @@ import aiosqlite
 from urllib.parse import urlencode
 from utils.views import Delete
 
+
 def get_prefix(client, message):
   if message.author.id==437163344525393920:
     return ""
@@ -78,12 +79,12 @@ async def load_cogs():
             "cogs.errors",
             "cogs.api",
             "cogs.images",
-
+            "cogs.music",
             "cogs.mod",
             "cogs.economy",
 
             "cogs.roles",
-            "cogs.events"
+            "cogs.events",
 
             "jishaku"
     ]
@@ -176,8 +177,16 @@ async def rule(ctx,*,number=1):
   embed = discord.Embed(title='Rule '+str(number)+':',description=string2,color=discord.Colour.blue())
   await ctx.send(embed=embed)
 
+@client.command(name="ee")
+async def testin(ctx):
+  view=discord.ui.View()
+  button=discord.ui.Button(label="this is a button")
+  async def callbac(interaction:discord.Interaction):
+    await interaction.response.send_message("responded")
+  button.callback=callbac
+  view.add_item(button)
 
-
+  await ctx.send("hello",view=view)
 @client.command(aliases=['w'])
 async def warn(ctx,member : discord.Member,*,reason='No reason provided'):
   embed = discord.Embed(title='Warn', description=str(member)+' has been warned for '+reason,color=discord.Colour.dark_gold())

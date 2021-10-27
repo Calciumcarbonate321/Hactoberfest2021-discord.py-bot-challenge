@@ -24,7 +24,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.has_guild_permissions(kick_members=True)
     @commands.cooldown(1,5,commands.BucketType.user)
-    async def ban(self,ctx,member:discord.Member,*,reason=None):
+    async def kick(self,ctx,member:discord.Member,*,reason=None):
         if ctx.author.top_role.position > member.top_role.position:
             if reason is not None:
                 reason = f"{reason} - Requested by {ctx.author.name} ({ctx.author.id})"
