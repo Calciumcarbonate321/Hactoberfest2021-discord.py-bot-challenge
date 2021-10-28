@@ -7,6 +7,12 @@ class Moderation(commands.Cog):
     def __init__(self,client):
         self.client=client
 
+    async def cog_check(self, ctx):
+        if not ctx.guild:
+            await ctx.send('Moderation commands are not available in Private Messages.')
+            return False
+        return True
+
     @commands.command(name="ban",help="This command can be used to ban someone from the server, the bot and you need to have 'ban members' permission.")
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.has_guild_permissions(ban_members=True)
@@ -24,7 +30,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.has_guild_permissions(kick_members=True)
     @commands.cooldown(1,5,commands.BucketType.user)
-    async def ban(self,ctx,member:discord.Member,*,reason=None):
+    async def kick(self,ctx,member:discord.Member,*,reason=None):
         if ctx.author.top_role.position > member.top_role.position:
             if reason is not None:
                 reason = f"{reason} - Requested by {ctx.author.name} ({ctx.author.id})"
