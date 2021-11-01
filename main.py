@@ -2,12 +2,9 @@ import discord
 from discord.ext import commands
 from replit import db
 import time
-import os
 import random
 import json
-from PIL import Image
 from io import BytesIO
-import traceback
 from datetime import datetime
 from cogs.help import BotHelp
 import asyncio
@@ -18,8 +15,6 @@ from utils.views import Delete
 
 
 def get_prefix(client, message):
-  if message.author.id==437163344525393920:
-    return ["","e!"]
   try:
       with open('assets/prefixes.json', 'r',encoding='utf8') as r:
           prefixes = json.load(r)
@@ -36,8 +31,6 @@ def get_prefix(client, message):
       with open('assets/prefixes.json', 'r',encoding='utf8') as t:
           prefixes = json.load(t)
           return prefixes[str(message.guild.id)]
-      
-  except: 
       return '.'
 
 class bot(commands.Bot):
@@ -78,7 +71,6 @@ async def load_cogs():
             "cogs.general",
             "cogs.errors",
             "cogs.api",
-            "cogs.images",
             "cogs.music",
             "cogs.mod",
             "cogs.economy",
@@ -271,7 +263,7 @@ async def curse(ctx,user : discord.Member = None):
       
 @client.command()
 async def ping(ctx):
-  ping = 'Pong! {0}'.format(round(client.latency)*1000)
+  ping = 'Pong! {0}'.format(client.latency*1000)
   embed =  discord.Embed(title='Ping', description=ping,color = discord.Colour.green())
   await ctx.send(embed=embed,view=Delete(ctx.author))
 

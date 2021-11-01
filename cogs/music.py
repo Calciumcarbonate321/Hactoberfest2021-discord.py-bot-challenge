@@ -2,6 +2,9 @@ import wavelink
 import discord
 from discord.ext import commands
 
+class track(wavelink.Track):
+    def __init__(self,*args,**kwargs):
+        self.requester=kwargs.get("requester")
 
 class Music(commands.Cog):
     """Music cog to hold Wavelink related commands and listeners."""
@@ -28,19 +31,28 @@ class Music(commands.Cog):
     async def on_wavelink_node_ready(self, node: wavelink.Node):
         print(f'Node: <{node.identifier}> is ready!')
 
-    
+    @commands.Cog.listener()
+    async def on_wavelink_track_start(self,player:wavelink.Player,track:wavelink.Track):
+        await player.tchannel.send(f"Started playing {track}")
+
+    @commands.Cog.listener()
+    async def on_wavelink_track_end(self,player:wavelink.Player,track:wavelink.Track,reason):
+        if reason!="FINISHED":
+            return
+        nt=player.queue.get()
+        await player.play(nt)
 
     @commands.command(name="play",aliases=["p"],help="Play a song with the given search query.If not connected, connect to our voice channel.")
-    async def play(self, ctx, *,search: wavelink.YouTubeTrack):
+    async def play(self, ctx, *,search:wavelink.YouTubeTrack):
         if not ctx.voice_client:
             vc: wavelink.Player = await ctx.author.voice.channel.connect(
                 cls=wavelink.Player)
         else:
             vc: wavelink.Player = ctx.voice_client
+        vc.tchannel=ctx.channel
         search.requester=ctx.author
         if not vc.is_playing():
             await vc.play(search)
-            await ctx.send(f"Started playing {search}")
             return
         vc.queue.put(search)
         await ctx.send(f"Added {search} to the queue.")
@@ -48,7 +60,10 @@ class Music(commands.Cog):
     @commands.group(name="queue",aliases=["q"],help="Displays the current queue.")
     async def q(self,ctx):
         p=self.bot.wlink.get_player(ctx.guild)
-        await ctx.send(p.queue)
+        qstr=str()
+        for i in p.queue:
+            qstr+=(i.title+"\n")
+        await ctx.send(qstr)
 
     @q.command(name="clear",help="Clears the queue.")
     async def cq(self,ctx):
@@ -74,7 +89,7 @@ class Music(commands.Cog):
         embed.add_field(name="Track name",value=p.track)
         embed.add_field(name="Track link",value=f"[Click here]({p.track.uri})")
         embed.set_thumbnail(url=p.track.thumb)
-        embed.set_footer(text=f"Requested bt {p.track.requester}")
+        embed.set_footer(text=f"Requested by {p.track.requester}")
         await ctx.send(embed=embed)
 
     @commands.command(name="skip",aliases=["next"],help="Skips the current audio.")
@@ -106,7 +121,7 @@ class Music(commands.Cog):
         player=self.bot.wlink.get_player(ctx.guild)
         if not player.is_paused():
             return await ctx.send("The player is not paused.")
-        await player.pause()
+        await player.resume()
         await ctx.message.add_reaction("👌")
         await ctx.send("Successfully resumed.") 
 
