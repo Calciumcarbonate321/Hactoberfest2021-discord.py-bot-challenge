@@ -13,7 +13,7 @@ class CommandErrorHandler(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):  # sourcery no-metrics
+    async def on_command_error(self, ctx, error):  
 
         if hasattr(ctx.command, 'on_error'):
             return
@@ -22,6 +22,8 @@ class CommandErrorHandler(commands.Cog):
         if cog and cog._get_overridden_method(cog.cog_command_error) is not None:
             return
         ignored = (commands.NotOwner)
+
+        error = getattr(error, 'original', error)
 
         if isinstance(error, ignored):
             return
