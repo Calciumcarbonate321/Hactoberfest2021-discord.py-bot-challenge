@@ -12,6 +12,7 @@ import aiohttp
 import aiosqlite
 from urllib.parse import urlencode
 from utils.views import Delete
+from utils import slash_util
 
 
 def get_prefix(client, message):
@@ -33,7 +34,7 @@ def get_prefix(client, message):
           return prefixes[str(message.guild.id)]
       return '.'
 
-class bot(commands.Bot):
+class bot(slash_util.Bot):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.starttime=datetime.utcnow()

@@ -66,6 +66,10 @@ class Informative(commands.Cog):
         embed.set_thumbnail(url=ctx.me.avatar.url)
         await ctx.send(embed=embed,view=view)
 
-
+    @commands.command(name="source",help="Shows the source code of specified command.")
+    async def source(self,ctx,*,command:str=None):
+        if command is None:
+        
+    
 def setup(client):
     client.add_cog(Informative(client))
